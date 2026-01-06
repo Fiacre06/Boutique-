@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Achat – Produits en ligne</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{font-family:Arial;background:#f2f7f4;margin:0;padding:20px;overflow-x:hidden;}
+.topbar{background:#2e8b57;color:white;padding:15px;border-radius:12px;display:flex;flex-direction:column;gap:10px;}
+.top-actions{display:flex;gap:10px;flex-wrap:wrap;}
+button{border:none;cursor:pointer;font-weight:600;}
+.sell-btn{background:linear-gradient(135deg,#22c55e,#16a34a);color:white;padding:8px 18px;border-radius:25px;}
+.messages-btn{background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:8px 18px;border-radius:25px;}
+.logout{background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:8px 18px;border-radius:25px;}
+.container{max-width:950px;margin:20px auto;display:flex;flex-direction:column;gap:18px;height:calc(100vh - 200px);overflow-y:auto;}
+.product{background:white;border-radius:14px;display:flex;gap:18px;padding:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);transition:.2s;}
+.product:hover{transform:translateY(-2px);}
+.product img{width:140px;height:140px;object-fit:cover;border-radius:12px;}
+.product-info{flex:1;display:flex;flex-direction:column;gap:6px;}
+.product-info strong{font-size:1.2em;color:#14532d;}
+.price{font-weight:bold;color:#16a34a;}
+.product-info button{margin-top:8px;align-self:flex-start;background:#2e8b57;color:white;padding:6px 14px;border-radius:20px;}
+.chat-container{position:fixed;top:0;left:0;width:360px;height:100%;background:white;border-right:4px solid #2e8b57;transform:translateX(-100%);transition:.3s;z-index:1000;display:flex;flex-direction:column;}
+.chat-container.open{transform:translateX(0)}
+.chat-header{background:#2e8b57;color:white;padding:15px;margin:0;display:flex;justify-content:space-between;align-items:center;}
+.chat-header button{background:none;border:none;color:white;font-size:20px;cursor:pointer;}
+.messages-list{flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.message{max-width:75%;padding:10px 14px;border-radius:18px;}
+.message.from{background:#ecf0f1}
+.message.to{background:#2e8b57;color:white;align-self:flex-end}
+.input-area{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+/* Input texte */
+#messageInput{
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 25px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+.input-area input{flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;}
+.input-area button{background:#2e8b57;color:white;padding:8px 16px;border-radius:20px;}
+#discussionsPanel{position:fixed;top:0;right:0;width:360px;height:100%;background:white;border-left:4px solid #2e8b57;transform:translateX(100%);transition:.3s;z-index:1001;display:flex;flex-direction:column;}
+#discussionsPanel.open{transform:translateX(0)}
+.messagerie-header{background:#2e8b57;color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;}
+.close-btn{background:none;color:white;font-size:20px;cursor:pointer;}
+.tabs{display:flex;}
+.tabs button{flex:1;padding:10px;background:#e5e7eb;border:none;cursor:pointer;}
+.tabs button.active{background:#2e8b57;color:white;}
+.discussion-item{padding:12px;margin:8px;border-radius:10px;background:#f9f9f9;cursor:pointer;}
+ #imageBtn{
+  background:#e5e7eb;
+  border-radius:50%;
+  padding:8px;
+}
+.message img{
+  max-width:200px;
+  border-radius:12px;
+  margin-top:5px;
+}
+ .discussion-item {
+  position: relative;
+  padding-right: 40px; /* espace pour badge */
+}
+
+.badge-unread {
+  position: absolute;
+  right: 10px;
+  top: 12px;
+  background:#ef4444;
+  color:white;
+  border-radius:12px;
+  padding:2px 8px;
+  font-size:12px;
+  font-weight:bold;
+}
+ /* Bouton envoyer */
+.btn-send {
+  background: linear-gradient(135deg,#3b82f6,#2563eb);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-send:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+/* Bouton fichiers */
+.btn-file {
+  background: linear-gradient(135deg,#10b981,#047857);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-file:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+/* Bouton audio */
+.btn-audio {
+  background: linear-gradient(135deg,#f59e0b,#b45309);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-audio:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+ audio {
+  width: 220px;
+  border-radius: 20px;
+}
+  /* ============================= */
+/* CORRECTION ZONE INPUT CHAT */
+/* ============================= */
+
+/* Zone globale */
+.input-area{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+/* Conteneur interne existant */
+#chatInputContainer{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Aperçus médias au-dessus */
+#imagePreview,
+#mediaPreview{
+  align-self: flex-start;
+}
+
+/* Ligne boutons + input */
+#chatInputContainer > div[style*="display:flex"]{
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Champ texte sur la même ligne */
+#messageInput{
+  flex: 1;
+  width: 170px;
+  padding: 13px 10px;
+  border-radius: 25px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-top: 0 !important;
+}
+
+/* Empêcher les boutons de rétrécir */
+.btn-send,
+.btn-file,
+.btn-audio{
+  flex-shrink: 0;
+}
+</style>
+</head>
+
+<body>
+  
+  <header style="text-align:center; background:#2e8b57; color:white; padding:25px 20px; border-radius:8px; margin-bottom:20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  <h1 style="margin:0; font-size:22px; font-weight:bold; letter-spacing:1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+    Marché-Agricole
+  </h1>
+</header>
+<div class="topbar">
+  <span id="userEmail">Connecté :</span>
+  <div class="top-actions">
+    <button class="sell-btn" id="sellBtn">Vendre</button>
+    <button class="messages-btn" id="messagesBtn">Messagerie</button>
+    <button class="logout" id="logoutBtn">Déconnexion</button>
+  </div>
+</div>
+
+<h3>Produits en ligne</h3>
+<div class="container" id="productList"></div>
+
+<!-- CHAT -->
+ <div class="chat-container" id="chatContainer">
+
+  <!-- Header du chat -->
+  <div class="chat-header">  
+    <span id="chatTitle">Discussion</span>  
+    <div>
+      <button id="deleteChat" title="Supprimer la discussion">🗑️</button>
+      <button id="closeChat">✕</button>  
+    </div>
+  </div>
+
+  <!-- Liste des messages -->
+  <div class="messages-list" id="messagesList"></div>
+  <small id="typingIndicator" style="padding:6px;color:#555;display:none">Écrit…</small>
+
+  <!-- Zone d'input -->
+  <div class="input-area">
+    <div id="chatInputContainer">
+      
+      <!-- Aperçu image -->
+      <img id="imagePreview" style="max-width:120px; max-height:120px; display:none; margin-bottom:8px; border-radius:8px;">
+      <div id="mediaPreview"></div>
+      <!-- Boutons d'envoi -->
+      <div style="display:flex; gap:8px; align-items:center; width:100%;">
+
+  <button id="fileBtn" class="btn-file">📎</button>
+
+  <input type="text" id="messageInput" placeholder="Écris un message...">
+
+  <button id="sendBtn" class="btn-send">➤</button>
+        <button id="audioBtn" class="btn-audio">🎤</button>
+</div>
+        <!-- Input hidden pour fichiers -->
+        <input type="file" id="fileInput" style="display:none;" accept="image/*,video/*,audio/*">
+
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- MESSAGERIE -->
+<div id="discussionsPanel">
+  <div class="messagerie-header">
+    <strong>Messagerie</strong>
+    <span class="close-btn" id="closeMessagerie">✕</span>
+  </div>
+  
+  <div class="tabs">
+    <button id="tabAchat" class="active">Achat</button>
+    <button id="tabVente">Vente</button>
+  </div>
+  <div id="discussionsList"></div>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+/* ===============================
+   Variables globales
+=============================== */
+let currentUser;
+let activeUserId = null;
+let activeProductId = null;
+let page = 0;
+const PAGE_SIZE = 20;
+let unreadCounts = {}; // badge messages non lus
+
+// 🔹 Elements du chat
+const sendBtn   = document.getElementById("sendBtn");
+const fileBtn   = document.getElementById("fileBtn");
+const fileInput = document.getElementById("fileInput");
+const audioBtn  = document.getElementById("audioBtn");
+const messageInput = document.getElementById("messageInput");
+const imagePreview = document.getElementById("imagePreview");
+
+// 🔹 Variables pour audio
+let mediaRecorder;
+let audioChunks = [];
+let pendingFile = null; // fichier en attente d'envoi
+let pendingType = null; // image | video | audio
+
+fileBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = () => {
+  const file = fileInput.files[0];
+  const preview = document.getElementById("mediaPreview");
+
+  preview.innerHTML = "";
+  imagePreview.style.display = "none";
+  pendingFile = null;
+  pendingType = null;
+
+  if (!file) return;
+
+  pendingFile = file;
+
+  // 🖼️ IMAGE
+  if (file.type.startsWith("image/")) {
+    pendingType = "image";
+
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.style.maxWidth = "120px";
+    img.style.borderRadius = "10px";
+    img.style.cursor = "zoom-in";
+
+    preview.appendChild(img);
+  }
+
+  // 🎥 VIDÉO
+  else if (file.type.startsWith("video/")) {
+    pendingType = "video";
+
+    const video = document.createElement("video");
+    video.src = URL.createObjectURL(file);
+    video.controls = true;
+    video.style.maxWidth = "160px";
+    video.style.borderRadius = "10px";
+
+    preview.appendChild(video);
+  }
+
+  // 🎧 AUDIO
+  else if (file.type.startsWith("audio/")) {
+    pendingType = "audio";
+
+    const audio = document.createElement("audio");
+    audio.src = URL.createObjectURL(file);
+    audio.controls = true;
+
+    preview.appendChild(audio);
+  }
+};
+audioBtn.onclick = async () => {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    // Stop enregistrement
+    mediaRecorder.stop();
+    audioBtn.textContent = "🎤";
+  } else {
+    // Demander microphone
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      pendingFile = audioBlob;
+      pendingType = "audio";
+
+      // Optionnel : prévisualiser le vocal
+      const preview = document.getElementById("mediaPreview");
+      preview.innerHTML = "";
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = URL.createObjectURL(audioBlob);
+      preview.appendChild(audio);
+
+      // Envoyer directement après enregistrement
+      await sendMessage(null, pendingFile);
+      pendingFile = null;
+      pendingType = null;
+    };
+
+    mediaRecorder.start();
+    audioBtn.textContent = "⏹️"; // Changer icône pour stop
+  }
+};
+/* ===============================
+   Auth
+=============================== */
+const { data: { user } } = await supabase.auth.getUser();
+if(!user) location.href="login.html";
+currentUser = user;
+userEmail.textContent = "Connecté : " + user.email;
+
+/* ===============================
+   Boutons topbar
+=============================== */
+messagesBtn.onclick = () => discussionsPanel.classList.add("open");
+closeMessagerie.onclick = () => discussionsPanel.classList.remove("open");
+sellBtn.onclick = () => location.href="vente.html";
+logoutBtn.onclick = async () => { await supabase.auth.signOut(); location.href="login.html"; };
+
+/* ===============================
+   Onglets Achat / Vente
+=============================== */
+tabAchat.onclick = () => { tabAchat.classList.add("active"); tabVente.classList.remove("active"); loadDiscussions("achat"); }
+tabVente.onclick = () => { tabVente.classList.add("active"); tabAchat.classList.remove("active"); loadDiscussions("vente"); }
+
+/* ===============================
+   Charger les produits
+=============================== */
+async function loadProducts(){
+  const { data } = await supabase
+    .from("products")
+    .select("*, profiles(username)")
+    .order("created_at",{ascending:false});
+  productList.innerHTML = "";
+  data.forEach(p => {
+    const d = document.createElement("div");
+    d.className = "product";
+    d.innerHTML = `
+      <img src="${p.imageurl}">
+      <div class="product-info">
+        <strong>${p.name}</strong>
+        <span>${p.description}</span>
+        <span class="price">${p.price} FCFA</span>
+        <span>Vendeur : ${p.profiles.username}</span>
+        <span>${p.whatsapp}</span>
+        <button>Contacter</button>
+      </div>`;
+    d.querySelector("button").onclick = () => openChat(p.user_id, p.id, p.name);
+    productList.appendChild(d);
+  });
+}
+
+
+ /* ===============================
+   Charger les discussions (Achat / Vente)
+=============================== */
+async function loadDiscussions(type="achat"){
+  discussionsList.innerHTML = "";
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select(`
+      *,
+      products(id,name,user_id),
+      from_profile:profiles!messages_from_user_fkey(username),
+      to_profile:profiles!messages_to_user_fkey(username)
+    `)
+    .not("deleted_by", "cs", `{${currentUser.id}}`) // <-- filtrer les messages supprimés par l'utilisateur
+    .order("created_at",{ascending:false});
+
+  if(error){ console.error(error); return; }
+
+  const seen = {};
+
+  data.forEach(m => {
+    if(!m.products) return;
+
+    const isSeller = m.products.user_id === currentUser.id;
+    const isBuyer  = !isSeller;
+
+    if(type==="achat" && !isBuyer) return;
+    if(type==="vente" && !isSeller) return;
+
+    const otherUserId = m.from_user === currentUser.id ? m.to_user : m.from_user;
+    const username    = m.from_user === currentUser.id ? m.to_profile?.username : m.from_profile?.username;
+    const key         = `${m.product_id}-${otherUserId}`;
+
+    if(seen[key]) return;
+    seen[key] = true;
+
+    const unread = unreadCounts[key] || 0;
+    const timeAgo = timeSince(new Date(m.created_at));
+
+    const div = document.createElement("div");
+    div.className = "discussion-item";
+    div.dataset.key = key;
+
+    div.innerHTML = `
+      <strong>${username || "Utilisateur"} · ${m.products.name}</strong><br>
+      <small>${m.message || ""}</small><br>
+      <small>${timeAgo}</small>
+      ${unread > 0 ? `<span class="badge-unread">${unread}</span>` : ""}
+    `;
+
+    // clic pour ouvrir le chat
+    div.onclick = async () => {
+      unreadCounts[key] = 0;
+      page = 0;
+      await openChat(otherUserId, m.product_id, m.products.name);
+    };
+
+    discussionsList.appendChild(div);
+  });
+}
+
+/* ===============================
+   Supprimer toute la discussion
+=============================== */
+deleteChat.onclick = async () => {
+  if (!activeUserId || !activeProductId) return;
+  if (!confirm("Supprimer toute la discussion ?")) return;
+
+  try {
+    // Ajouter ton ID dans deleted_by pour tous les messages de cette discussion
+    const { error } = await supabase
+      .from("messages")
+      .update({
+        deleted_by: supabase.raw('array_append(deleted_by, ?)', [currentUser.id])
+      })
+      .or(
+        `and(from_user.eq.${currentUser.id},to_user.eq.${activeUserId}),and(from_user.eq.${activeUserId},to_user.eq.${currentUser.id})`
+      )
+      .eq("product_id", activeProductId);
+
+    if(error) throw error;
+
+    // Reset UI
+    messagesList.innerHTML = "";
+    activeUserId = null;
+    activeProductId = null;
+    chatContainer.classList.remove("open");
+
+    // Recharger la liste des discussions pour supprimer la ligne définitivement
+    loadDiscussions(tabAchat.classList.contains("active") ? "achat" : "vente");
+
+  } catch(err) {
+    console.error("Erreur suppression discussion:", err);
+    alert("Impossible de supprimer la discussion : " + err.message);
+  }
+};
+/* ===============================
+   Ouvrir le chat
+=============================== */
+ window.openChat = async (userId, productId, productName) => {
+  activeUserId = userId;
+  activeProductId = productId;
+  page = 0;
+
+  // Ouvrir le chat
+  chatContainer.classList.add("open");
+  chatTitle.textContent = "Produit : " + productName;
+  discussionsPanel.classList.remove("open");
+  chatContainer.onclick = e => e.stopPropagation();
+
+  try {
+    // 🔹 Vérifier si la discussion a déjà des messages
+    const { data: messages, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("product_id", productId)
+      .or(`and(from_user.eq.${currentUser.id},to_user.eq.${userId}),and(from_user.eq.${userId},to_user.eq.${currentUser.id})`)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    // 🔹 Filtrer les messages supprimés par l'utilisateur
+    const activeMessages = messages.filter(m => !(m.deleted_by || []).includes(currentUser.id));
+
+    if (activeMessages.length === 0) {
+      // Aucun message → créer un message fantôme pour éviter que le chat reste vide
+      const { error: insertError } = await supabase.from("messages").insert({
+        from_user: currentUser.id,
+        to_user: userId,
+        product_id: productId,
+        message: null,
+        is_read: true,
+        deleted_by: []
+      });
+      if (insertError) throw insertError;
+    }
+
+    // 🔹 Charger les messages (fonction déjà existante)
+    await loadMessages();
+
+  } catch (err) {
+    console.error("Erreur ouverture chat :", err);
+    alert("Impossible d'ouvrir la discussion : " + err.message);
+  }
+};
+
+/* ===============================
+   Charger les messages + pagination + suppression
+=============================== */
+async function loadMessages(){
+  if(!activeProductId || !activeUserId) return;
+
+  const isAtBottom = messagesList.scrollHeight - messagesList.scrollTop <= messagesList.clientHeight + 50;
+  messagesList.innerHTML="";
+
+  // 🔹 bouton "Charger plus" si page > 0
+  if(page > 0){
+    const loadMoreBtn = document.createElement("button");
+    loadMoreBtn.textContent = "Charger plus";
+    loadMoreBtn.style.margin = "10px";
+    loadMoreBtn.style.background="#3b82f6";
+    loadMoreBtn.style.color="white";
+    loadMoreBtn.style.border="none";
+    loadMoreBtn.style.padding="6px 12px";
+    loadMoreBtn.style.borderRadius="12px";
+    loadMoreBtn.style.cursor="pointer";
+    loadMoreBtn.onclick = () => { page++; loadMessages(); };
+    messagesList.prepend(loadMoreBtn);
+  }
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("product_id", activeProductId)
+    .or(
+      `and(from_user.eq.${currentUser.id},to_user.eq.${activeUserId}),and(from_user.eq.${activeUserId},to_user.eq.${currentUser.id})`
+    )
+    .not("deleted_by", "cs", `{${currentUser.id}}`)
+    .order("created_at",{ascending:true})
+    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+  if(error){ console.error(error); return; }
+
+  data.forEach(m => {
+   // Ajout avant de créer le div pour le message
+if(m.deleted_by && m.deleted_by.includes(currentUser.id)) return;
+    const div = document.createElement("div");
+    div.className = m.from_user === currentUser.id ? "message to" : "message from";
+
+    // TEXTE
+    if(m.message){
+      const text = document.createElement("div");
+      text.textContent = m.message;
+      div.appendChild(text);
+    }
+
+    // IMAGE
+    if(m.image_url){
+      const img = document.createElement("img");
+      img.src = m.image_url;
+      img.style.maxWidth = "200px";
+      img.style.borderRadius = "12px";
+      img.style.cursor = "zoom-in";
+      img.onclick = () => {
+        const overlay = document.createElement("div");
+        overlay.style = `
+          position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,.8);
+          display:flex;align-items:center;justify-content:center;
+          z-index:9999;
+        `;
+        const big = document.createElement("img");
+        big.src = img.src;
+        big.style.maxWidth = "95%";
+        big.style.maxHeight = "95%";
+        overlay.appendChild(big);
+        overlay.onclick = () => overlay.remove();
+        document.body.appendChild(overlay);
+      };
+      div.appendChild(img);
+    }
+
+    // AUDIO
+    if(m.audio_url){
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = m.audio_url;
+      div.appendChild(audio);
+    }
+
+    // VIDEO
+    if(m.video_url){
+      const video = document.createElement("video");
+      video.src = m.video_url;
+      video.controls = true;
+      video.style.maxWidth = "220px";
+      video.style.borderRadius = "12px";
+      video.style.cursor = "pointer";
+
+      video.onclick = () => {
+        const overlay = document.createElement("div");
+        overlay.style = `
+          position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,.9);
+          display:flex;align-items:center;justify-content:center;
+          z-index:9999;
+        `;
+        const bigVideo = document.createElement("video");
+        bigVideo.src = m.video_url;
+        bigVideo.controls = true;
+        bigVideo.autoplay = true;
+        bigVideo.style.maxWidth = "95%";
+        bigVideo.style.maxHeight = "95%";
+        bigVideo.style.borderRadius = "12px";
+        overlay.appendChild(bigVideo);
+        overlay.onclick = () => {
+          bigVideo.pause();
+          overlay.remove();
+        };
+        document.body.appendChild(overlay);
+      };
+
+      div.appendChild(video);
+    }
+
+    // ✅ BOUTON SUPPRIMER pour mes messages seulement
+  if(m.from_user === currentUser.id && !(m.deleted_by || []).includes(currentUser.id)){
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "🗑️";
+    delBtn.style.marginLeft = "6px";
+    delBtn.style.cursor = "pointer";
+    delBtn.onclick = async (e) => {
+      e.stopPropagation();
+      await supabase.from("messages").update({
+        deleted_by: [...(m.deleted_by || []), currentUser.id]
+      }).eq("id", m.id);
+      div.remove(); // supprime immédiatement l'UI sans recharger
+    };
+    div.appendChild(delBtn);
+  }
+
+  // ✅ Marquer comme lu
+  if(m.to_user === currentUser.id && !m.is_read){
+    supabase.from("messages").update({is_read:true}).eq("id", m.id);
+  }
+
+  messagesList.appendChild(div);
+});
+  if(isAtBottom) messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+/* ===============================
+   Envoyer un message
+=============================== */
+async function sendMessage(text = null, file = null) {
+  if (!text && !file) return;
+
+  let imageUrl = null;
+  let videoUrl = null;
+  let audioUrl = null;
+
+  if (file) {
+    const ext = file.name
+      ? file.name.split(".").pop()
+      : file.type.startsWith("audio/")
+        ? "webm"
+        : "bin";
+
+    const fileName = `${Date.now()}-${currentUser.id}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("chat-files")
+      .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+    if (uploadError) {
+      console.error("Erreur upload fichier:", uploadError);
+      alert("Erreur upload fichier : " + uploadError.message);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("chat-files")
+      .getPublicUrl(fileName);
+
+    const fileUrl = publicData.publicUrl;
+
+    if (file.type.startsWith("image/")) imageUrl = fileUrl;
+    else if (file.type.startsWith("video/")) videoUrl = fileUrl;
+    else if (file.type.startsWith("audio/")) audioUrl = fileUrl;
+  }
+
+  const { error: insertError } = await supabase
+    .from("messages")
+    .insert({
+      message: text || null,
+      image_url: imageUrl,
+      video_url: videoUrl,
+      audio_url: audioUrl,
+      from_user: currentUser.id,
+      to_user: activeUserId,
+      product_id: activeProductId,
+      is_read: false,
+      deleted_by: []
+    });
+
+  if (insertError) {
+    console.error("Erreur envoi message:", insertError);
+    alert("Erreur envoi message : " + insertError.message);
+    return;
+  }
+
+  messageInput.value = "";
+  fileInput.value = "";
+  imagePreview.style.display = "none";
+  document.getElementById("mediaPreview").innerHTML = "";
+
+  await loadMessages();
+}
+// Envoyer message texte ou fichier depuis le chat
+sendBtn.onclick = async () => {
+  const text = messageInput.value.trim();
+  await sendMessage(text, pendingFile);
+  pendingFile = null;
+  pendingType = null;
+};
+ messageInput.addEventListener("keydown", async (e) => {
+  if(e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    const text = messageInput.value.trim();
+    await sendMessage(text, pendingFile);
+    pendingFile = null;
+    pendingType = null;
+  }
+});
+ // 🔹 Bouton micro / vocal
+audioBtn.onclick = async () => {
+  try {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      // Stop enregistrement
+      mediaRecorder.stop();
+      audioBtn.textContent = "🎤";
+    } else {
+      // Demander microphone
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        pendingFile = audioBlob;
+        pendingType = "audio";
+
+        // Prévisualiser le vocal
+        const preview = document.getElementById("mediaPreview");
+        preview.innerHTML = "";
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.src = URL.createObjectURL(audioBlob);
+        preview.appendChild(audio);
+
+        // Envoyer directement après enregistrement
+        await sendMessage(null, pendingFile);
+        pendingFile = null;
+        pendingType = null;
+      };
+
+      mediaRecorder.start();
+      audioBtn.textContent = "⏹️"; // changer icône pour stop
+    }
+  } catch (err) {
+    console.error("Impossible d'accéder au micro :", err);
+    alert("Erreur micro : " + err.message);
+  }
+};
+/* ===============================
+   Temps relatif
+=============================== */
+function timeSince(date){
+  const seconds = Math.floor((new Date() - date) / 1000);
+  const minutes = Math.floor(seconds/60);
+  const hours   = Math.floor(minutes/60);
+  const days    = Math.floor(hours/24);
+
+  if(days>0) return `il y a ${days} j`;
+  if(hours>0) return `il y a ${hours} h`;
+  if(minutes>0) return `il y a ${minutes} min`;
+  return `à l'instant`;
+}
+
+function onNewMessage(fromUser){
+  unreadCounts[fromUser] = (unreadCounts[fromUser] || 0) + 1;
+  updateBadge(fromUser);
+}
+
+/* ===============================
+   Bouton X du chat
+=============================== */
+closeChat.onclick = () => chatContainer.classList.remove("open");
+
+/* ===============================
+   Temps réel
+=============================== */
+supabase
+  .channel('messages-realtime')
+  .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload => {
+    const m = payload.new;
+    const otherUserId = m.from_user === currentUser.id ? m.to_user : m.from_user;
+    const key = `${m.product_id}-${otherUserId}`;
+
+    if(m.to_user === currentUser.id){
+      unreadCounts[key] = (unreadCounts[key] || 0) + 1;
+
+      const div = document.querySelector(`.discussion-item[data-key="${key}"]`);
+      if(div){
+        let badge = div.querySelector(".badge-unread");
+        if(!badge){
+          badge = document.createElement("span");
+          badge.className = "badge-unread";
+          div.appendChild(badge);
+        }
+        badge.textContent = unreadCounts[key];
+      }
+
+      loadDiscussions(tabAchat.classList.contains("active") ? "achat" : "vente");
+    }
+
+    if(m.product_id === activeProductId &&
+       (m.from_user === activeUserId || m.to_user === activeUserId)){
+      loadMessages();
+    }
+  })
+  .subscribe();
+
+/* ===============================
+   Auto-load
+=============================== */
+loadProducts();
+loadDiscussions("achat");
+
+  deleteChat.onclick = async () => {
+  if (!activeUserId || !activeProductId) return;
+  if (!confirm("Supprimer toute la discussion pour vous ?")) return;
+
+  try {
+    // 🔹 Récupérer tous les messages de cette discussion
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('id, deleted_by, from_user, to_user')
+      .eq('product_id', activeProductId);
+
+    if (error) throw error;
+
+    // 🔹 Mettre à jour chaque message individuellement
+    for (let m of messages) {
+      const updatedDeletedBy = Array.isArray(m.deleted_by) ? [...m.deleted_by] : [];
+      if (!updatedDeletedBy.includes(currentUser.id)) {
+        updatedDeletedBy.push(currentUser.id);
+
+        const { error: updateError } = await supabase
+          .from('messages')
+          .update({ deleted_by: updatedDeletedBy })
+          .eq('id', m.id);
+
+        if (updateError) throw updateError;
+      }
+    }
+
+    // 🔹 Reset UI
+    messagesList.innerHTML = "";
+    activeUserId = null;
+    activeProductId = null;
+    chatContainer.classList.remove("open");
+
+    // 🔹 Recharger les discussions
+    loadDiscussions(tabAchat.classList.contains("active") ? "achat" : "vente");
+
+    alert("Discussion supprimée pour vous !");
+  } catch (err) {
+    console.error("Erreur suppression discussion :", err);
+    alert("Erreur suppression discussion : " + err.message);
+  }
+};
+</script>
+</body>
+</html>

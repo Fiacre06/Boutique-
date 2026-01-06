@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Marché-Agricole</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* ===== Reset & Font ===== */
+body, html { margin:0; padding:0; font-family: Arial, sans-serif; }
+body { background:#f2f7f4; }
+
+/* ===== Header ===== */
+header {
+  background:#2e8b57;
+  color:white;
+  text-align:center;
+  padding:40px 20px 20px 20px;
+}
+header h1 { margin:0; font-size:2.2em; }
+
+/* ===== Buttons sous le titre ===== */
+.header-buttons {
+  margin-top:20px;
+  display:flex;
+  justify-content:center;
+  gap:15px;
+}
+.header-buttons button {
+  padding:12px 25px;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:0.2s;
+  font-size:1em;
+}
+.header-buttons .login-btn { background:#fff; color:#2e8b57; }
+.header-buttons .login-btn:hover { background:#d9f0e0; }
+.header-buttons .signup-btn { background:#27ae60; color:#fff; }
+.header-buttons .signup-btn:hover { background:#2ecc71; }
+
+/* ===== Main ===== */
+main {
+  max-width:900px;
+  margin:50px auto;
+  padding:0 20px;
+  text-align:center;
+}
+main h2 { font-size:2em; color:#2e8b57; margin-bottom:20px; }
+main p { font-size:1.1em; line-height:1.6; color:#333; }
+
+/* ===== Sidebar ===== */
+.sidebar {
+  position:fixed;
+  top:0; right:-400px;
+  width:350px;
+  height:100%;
+  background:white;
+  box-shadow:-4px 0 12px rgba(0,0,0,0.2);
+  padding:30px 20px;
+  transition:right 0.3s ease;
+  z-index:2000;
+  overflow-y:auto;
+}
+.sidebar.open { right:0; }
+
+/* ===== Close button ===== */
+.sidebar .close-btn {
+  position:absolute;
+  top:15px; right:15px;
+  font-size:1.5em;
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:#555;
+}
+
+/* ===== Form ===== */
+.sidebar h3 { text-align:center; color:#2e8b57; margin-bottom:20px; }
+
+/* Password wrapper pour œil */
+.password-wrapper {
+  position:relative;
+}
+.password-wrapper input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:1em;
+  padding-right:40px; /* espace pour l’œil */
+}
+.password-wrapper .toggle-pass {
+  position:absolute;
+  top:50%;
+  right:10px;
+  transform:translateY(-50%);
+  cursor:pointer;
+  font-size:1.1em;
+  color:#555;
+}
+
+/* Input et bouton */
+.sidebar input:not(.toggle-pass), .sidebar select {
+ width:95%;
+  max-width:300px;
+  padding:10px;
+  margin:15px 25px;
+  display:block;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:1em;
+}
+.sidebar button.action-btn {
+  width:90%;
+  padding:10px;
+  background:#2e8b57;
+  border:none;
+  color:white;
+  font-weight:bold;
+  border-radius:6px;
+  cursor:pointer;
+  margin:15px 25px; 
+  transition:0.2s;
+}
+.sidebar button.action-btn:hover { background:#27ae60; }
+.sidebar .error { color:red; font-size:0.9em; margin-top:10px; text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Marché-Agricole</h1>
+  <div class="header-buttons">
+    <button class="login-btn" id="loginBtn">Se connecter</button>
+    <button class="signup-btn" id="signupBtn">S'inscrire</button>
+  </div>
+</header>
+
+<main>
+  <h2>Bienvenue sur Marché-Agricole</h2>
+  <p>
+    Marché-Agricole est votre boutique en ligne pour acheter et vendre des produits agricoles en toute simplicité.
+    Parcourez les produits, contactez les vendeurs directement et gérez vos commandes facilement.
+    Inscrivez-vous pour profiter de toutes les fonctionnalités et découvrez une expérience conviviale et rapide.
+  </p>
+</main>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <button class="close-btn" id="closeSidebar">✖</button>
+
+  <h3 id="formTitle">Connexion</h3>
+
+  <input type="text" id="username" placeholder="Nom d'utilisateur" style="display:none;">
+  <select id="roleSelect" style="display:none;">
+    <option value="acheteur">Acheteur</option>
+    <option value="vendeur">Vendeur</option>
+  </select>
+
+  <input type="email" id="email" placeholder="Email">
+
+  <div class="password-wrapper">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <span class="toggle-pass" id="togglePass">&#128065;</span>
+  </div>
+
+  <button id="actionBtn" class="action-btn">Se connecter</button>
+  <div class="error" id="errorMsg"></div>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+const sidebar = document.getElementById('sidebar');
+const closeSidebar = document.getElementById('closeSidebar');
+const loginBtn = document.getElementById('loginBtn');
+const signupBtn = document.getElementById('signupBtn');
+
+const formTitle = document.getElementById('formTitle');
+const actionBtn = document.getElementById('actionBtn');
+const errorMsg = document.getElementById('errorMsg');
+const usernameInput = document.getElementById('username');
+const roleSelect = document.getElementById('roleSelect');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const togglePass = document.getElementById('togglePass');
+
+let isLogin = true;
+
+// Ouvrir sidebar
+loginBtn.onclick = () => {
+  sidebar.classList.add('open');
+  isLogin = true;
+  usernameInput.style.display = 'none';
+  roleSelect.style.display = 'none';
+  formTitle.textContent = "Connexion";
+  actionBtn.textContent = "Se connecter";
+  errorMsg.textContent = '';
+};
+
+signupBtn.onclick = () => {
+  sidebar.classList.add('open');
+  isLogin = false;
+  usernameInput.style.display = 'block';
+  roleSelect.style.display = 'block';
+  formTitle.textContent = "Inscription";
+  actionBtn.textContent = "S'inscrire";
+  errorMsg.textContent = '';
+};
+
+// Fermer sidebar
+closeSidebar.onclick = () => {
+  sidebar.classList.remove('open');
+  errorMsg.textContent = '';
+  emailInput.value = '';
+  passwordInput.value = '';
+  usernameInput.value = '';
+};
+
+// Afficher / cacher mot de passe
+togglePass.onclick = () => {
+  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+};
+
+// Gestion connexion / inscription
+actionBtn.onclick = async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  const username = usernameInput.value.trim();
+  const role = roleSelect.value;
+
+  if(!email || !password || (!isLogin && (!username || !role))){
+    errorMsg.textContent = "Remplis tous les champs";
+    return;
+  }
+
+  if(isLogin){
+    const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error){ errorMsg.textContent = "Email ou mot de passe incorrect"; return; }
+
+    // Récupérer profil pour redirection selon rôle
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    if(profileError || !profile){ errorMsg.textContent = "Profil introuvable"; return; }
+
+    window.location.href = profile.role === 'acheteur' ? "achat.html" : "vente.html";
+
+  } else {
+    // Vérifier doublons username
+    const { data: existingUsername } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username)
+      .single();
+    if(existingUsername){ errorMsg.textContent = "Ce nom d'utilisateur est déjà utilisé"; return; }
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if(error){ errorMsg.textContent = error.message; return; }
+
+    const userId = data.user.id;
+
+    // Créer profil avec username et rôle choisi
+    const { error: profileError } = await supabase.from('profiles').insert([{
+      id: userId,
+      username,
+      email,
+      role
+    }]);
+    if(profileError){ errorMsg.textContent = profileError.message; return; }
+
+    alert("Inscription réussie !");
+    window.location.href = role === 'acheteur' ? "achat.html" : "vente.html";
+  }
+};
+</script>
+
+</body>
+</html>

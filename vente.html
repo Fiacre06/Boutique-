@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Vente – Mes Produits</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family:Arial; background:#f2f7f4; margin:0; padding:20px; overflow-x:hidden; }
+
+/* Topbar */
+.topbar { display:flex; flex-direction:column; align-items:flex-start; background:#2e8b57; color:white; padding:20px; border-radius:8px; margin-bottom:20px; }
+.topbar span { font-size:1.2em; font-weight:bold; margin-bottom:10px; }
+.topbar button { border:none; padding:8px 14px; border-radius:6px; cursor:pointer; color:white; margin-top:5px; font-weight:bold; }
+.logout { background:#c0392b; }
+.logout:hover { background:#e74c3c; }
+
+/* Formulaire ajout produit */
+.add-product { background:white; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); margin-bottom:20px; }
+.add-product input, .add-product textarea { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccc; font-size:1em; }
+.addBtn { background:#2e8b57; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; transition:0.2s; width:100%; }
+.addBtn:hover { background:#27ae60; }
+
+/* Liste produits - scroll horizontal */
+.container { max-width:1000px; margin:auto; display:flex; flex-direction:row; gap:20px; overflow-x:auto; padding-bottom:10px; }
+.myProduct { background:white; padding:15px; border-radius:8px; display:flex; flex-direction:column; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1); min-width:250px; flex-shrink:0; }
+.myProduct img { width:150px; height:150px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
+.myProduct-info { text-align:center; margin-bottom:10px; }
+
+/* Boutons produits */
+.myProduct-buttons-bottom { display:flex; gap:10px; justify-content:center; margin-top:10px; }
+.editBtn { background: #2980b9; color: white; padding: 8px 16px; border-radius:6px; border:none; cursor:pointer; font-weight:bold; transition:0.2s; }
+.editBtn:hover { background:#3498db; }
+.deleteBtn { background: #c0392b; color: white; padding: 8px 16px; border-radius:6px; border:none; cursor:pointer; font-weight:bold; transition:0.2s; }
+.deleteBtn:hover { background:#e74c3c; }
+
+/*----- BOUTON RETOUR FLOTTANT ----- */
+.back-btn{
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: transparent;
+    color: white;
+    font-size: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+    cursor: pointer;
+    animation: bounce 1.6s infinite ease;
+    z-index: 1000;
+}
+.back-btn i { font-style: normal; font-weight: bold; }
+.back-btn.rotate{ animation:rotate360 0.6s linear forwards; }
+@keyframes rotate360{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+    h2 { font-size: 20px; }
+    h2 svg { width: 28px; height: 28px; }
+    p, li { font-size: 14px; }
+    .card { width: 260px; padding: 20px; }
+}
+</style>
+</head>
+<body>
+    
+    <header style="text-align:center; background:#2e8b57; color:white; padding:25px 20px; border-radius:8px; margin-bottom:20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  <h1 style="margin:0; font-size:22px; font-weight:bold; letter-spacing:1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+    Marché-Agricole
+  </h1>
+</header>
+  <!-- Bouton retour flottant -->
+<div class="back-btn" id="backBtn"><i>←</i></div>
+
+<div class="topbar">
+  <span id="userName">Connecté :</span>
+  <button class="logout" id="logoutBtn">Déconnexion</button>
+</div>
+
+<h3>Produit à vendre</h3>
+<div class="add-product">
+  <input type="text" id="name" placeholder="Nom du produit">
+  <textarea id="description" placeholder="Description"></textarea>
+  <input type="number" id="price" placeholder="Prix">
+  <input type="text" id="whatsapp" placeholder="Numéro WhatsApp">
+  <input type="file" id="image" accept="image/*">
+  <button id="addBtn" class="addBtn">Mettre en ligne</button>
+</div>
+
+<h3>Mes produits en ligne</h3>
+<div class="container" id="myProductsList"></div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+let currentUser = null;
+let currentProfile = null;
+
+/* Auth */
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) location.href='login.html';
+currentUser = user;
+
+/* Profil */
+const { data: profileData } = await supabase.from('profiles').select('username').eq('id', currentUser.id).single();
+if(profileData) currentProfile = profileData;
+document.getElementById('userName').textContent = currentProfile ? currentProfile.username : "Utilisateur";
+
+/* Déconnexion */
+document.getElementById('logoutBtn').onclick = async ()=>{
+  await supabase.auth.signOut();
+  location.href='login.html';
+}
+
+/* Ajouter produit */
+document.getElementById('addBtn').onclick = async ()=>{
+  const name = document.getElementById('name').value.trim();
+  const description = document.getElementById('description').value.trim();
+  const price = document.getElementById('price').value;
+  const whatsapp = document.getElementById('whatsapp').value.trim();
+  const file = document.getElementById('image').files[0];
+  if(!name || !description || !price || !whatsapp || !file){ alert('Remplis tous les champs'); return; }
+
+  const fileName = `${currentUser.id}_${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
+  const { error:uploadError } = await supabase.storage.from('products').upload(fileName,file);
+  if(uploadError){ alert(uploadError.message); return; }
+
+  const { data:urlData } = supabase.storage.from('products').getPublicUrl(fileName);
+  await supabase.from('products').insert([{
+    name, description, price, whatsapp,
+    imageurl:urlData.publicUrl,
+    user_id: currentUser.id
+  }]);
+
+  loadMyProducts();
+}
+
+/* Charger produits */
+async function loadMyProducts(){
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at',{ascending:false});
+  if(error){ console.error(error); return; }
+
+  const container = document.getElementById('myProductsList');
+  container.innerHTML = '';
+  data.forEach(p=>{
+    const div = document.createElement('div');
+    div.className='myProduct';
+    div.innerHTML=`
+      <img src="${p.imageurl}">
+      <div class="myProduct-info">
+        <strong>${p.name}</strong><br>
+        ${p.description}<br>
+        Prix : ${p.price} FCFA<br>
+        WhatsApp : ${p.whatsapp}
+      </div>
+      <div class="myProduct-buttons-bottom">
+        <button class="editBtn">Modifier</button>
+        <button class="deleteBtn">Supprimer</button>
+      </div>
+    `;
+    container.appendChild(div);
+
+    div.querySelector('.editBtn').addEventListener('click', ()=>editProduct(p));
+    div.querySelector('.deleteBtn').addEventListener('click', async ()=>{
+      if(confirm("Voulez-vous vraiment supprimer ce produit ?")){
+        await supabase.from('products').delete().eq('id', p.id);
+        loadMyProducts();
+      }
+    });
+  });
+}
+
+/* Modifier produit avec image */
+async function editProduct(pData){
+  const newName = prompt('Nom du produit:', pData.name);
+  const newDesc = prompt('Description:', pData.description);
+  const newPrice = prompt('Prix:', pData.price);
+  const newWhats = prompt('WhatsApp:', pData.whatsapp);
+  if(!newName||!newDesc||!newPrice||!newWhats) return;
+
+  // Demander une nouvelle image
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.click();
+
+  fileInput.onchange = async ()=>{
+    let imageUrl = pData.imageurl; // conserver image actuelle par défaut
+    const file = fileInput.files[0];
+    if(file){
+      const fileName = `${currentUser.id}_${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
+      const { error:uploadError } = await supabase.storage.from('products').upload(fileName,file);
+      if(uploadError){ alert(uploadError.message); return; }
+      const { data:urlData } = supabase.storage.from('products').getPublicUrl(fileName);
+      imageUrl = urlData.publicUrl;
+    }
+
+    await supabase.from('products').update({
+      name:newName,
+      description:newDesc,
+      price:newPrice,
+      whatsapp:newWhats,
+      imageurl:imageUrl
+    }).eq('id',pData.id);
+
+    loadMyProducts();
+  }
+
+  // Si l'utilisateur ferme le prompt de fichier, on met quand même à jour le reste
+  setTimeout(async ()=>{
+    if(!fileInput.files[0]){
+      await supabase.from('products').update({
+        name:newName,
+        description:newDesc,
+        price:newPrice,
+        whatsapp:newWhats
+      }).eq('id',pData.id);
+      loadMyProducts();
+    }
+  },1000);
+}
+
+//----- BOUTON RETOUR ANIMÉ -----
+document.getElementById("backBtn").addEventListener("click", function(){
+    const btn = this;
+    btn.classList.add("rotate");
+    setTimeout(()=>btn.classList.remove("rotate"), 600);
+    setTimeout(()=>{ window.location.href="index.html"; }, 300);
+});
+
+loadMyProducts();
+</script>
+</body>
+</html>
