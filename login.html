@@ -248,7 +248,7 @@ actionBtn.onclick = async () => {
       .single();
     if(profileError || !profile){ errorMsg.textContent = "Profil introuvable"; return; }
 
-    window.location.href = profile.role === 'acheteur' ? "achat.html" : "vente.html";
+    window.location.href = profile.role === 'acheteur' ? "index.html" : "vente.html";
 
   } else {
     // Vérifier doublons username
@@ -274,7 +274,7 @@ actionBtn.onclick = async () => {
     if(profileError){ errorMsg.textContent = profileError.message; return; }
 
     alert("Inscription réussie !");
-    window.location.href = role === 'acheteur' ? "achat.html" : "vente.html";
+    window.location.href = role === 'acheteur' ? "index.html" : "vente.html";
   }
 };
 </script>
